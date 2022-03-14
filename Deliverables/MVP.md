@@ -11,6 +11,8 @@ My pipeline for the project is:
 I made a Streamlit app hosted in my local machine that performs Q&A, selecting the context based on 1 filter.
 
 ![](https://github.com/Lwaggaman/Engineering_Project/blob/main/Deliverables/ezgif.com-gif-maker.gif)
+*An Assemblymember is selected from a dropdown menu (from a pool of 3) and the question "What is lacking?" is typed in. After buffering, *gender perspective* is printed out.*
+
 
 On next iterations I hope to:
 - Add more fields so there are more filters (topic, party, etc).

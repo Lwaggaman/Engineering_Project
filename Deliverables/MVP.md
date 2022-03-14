@@ -10,7 +10,7 @@ My pipeline for the project is:
 
 I made a Streamlit app hosted in my local machine that performs Q&A, selecting the context based on 1 filter.
 
-![](https://imgur.com/a/igjXR4c)
+![](https://github.com/Lwaggaman/Engineering_Project/blob/main/Deliverables/ezgif.com-gif-maker.gif)
 
 On next iterations I hope to:
 - Add more fields so there are more filters (topic, party, etc).

@@ -13,7 +13,7 @@ from text_funcs import clean_id
 from time import sleep
 from collections import defaultdict
 from pprint import pprint
-
+import logging
 import contextlib
 import sys
 from tqdm import tqdm
@@ -42,13 +42,9 @@ def nostdout():
     sys.stdout = save_stdout
 
 #Connect to DB
-config = {
-  'host': '54.241.98.140:27017',
-  'username': 'app_user',
-  'password': 'rechazo',
-  'authSource': 'cc_db'
-}
-client = MongoClient()
+from db_connection import setup_client
+
+client = setup_client()
 db = client.cc_db
 
 #Initialize driver for scraping
@@ -59,16 +55,17 @@ driver = webdriver.Firefox()
 def scrape_page():
     global page_nr
     #Get HTML elements
-    soup = bs(driver.page_source)
+    soup = bs(driver.page_source, features="lxml")
     table_odd = soup.find(id='tableIniciativas').find_all(class_='odd')
     table_even = soup.find(id='tableIniciativas').find_all(class_='even')
     
     # Separate elements into docs
     page_docs = []
-    for i in tqdm(range(5), leave=False, desc=f'Scraping page {page_nr}'):
-        page_docs.append(table_even[i].find_all('td'))
-        page_docs.append(table_even[i].find_all('td'))
-        sleep(.3)
+    with nostdout():
+        for i in tqdm(range(5), leave=False, desc=f'Scraping PAGE {page_nr}'):
+            page_docs.append(table_even[i].find_all('td'))
+            page_docs.append(table_even[i].find_all('td'))
+            sleep(.3)
     
     # Format for db
     page_dicts = []
@@ -100,11 +97,11 @@ def update_db_docs():
     
     update_docs = True
     page_nr = 1
-    
+    new_docs = scrape_page()
+
     #Loop crawls through pages until it reaches one where all the data is already in the db.
     nr_res = defaultdict(int) #Tracks all bulk api results (done sequentially to avoid bloating memory)
-    while update_docs == True: 
-        with nostdout(): #Prevents bloated output from multiple redundant progress bars when printing within outer loop.
+    while update_docs == True:
         for doc in new_docs:
             if db.norms.find_one({'_id':doc['_id']}):
                 new_docs.remove(doc)
@@ -128,5 +125,6 @@ def update_db_docs():
     print(f'Scraped {page_nr - 1} pages')
     pprint(nr_res)
     #print(f'Matched: {nr_res['nMatched']}, Inserted: {nr_res['nInserted']}, Modified: {nr_res['nModified']}')
+
 
 update_db_docs()

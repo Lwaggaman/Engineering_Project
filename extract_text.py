@@ -15,8 +15,7 @@ import sys
 client = setup_client()
 db = client.cc_db
 
-#logging.basicConfig(filename='text.log', format='%(name)s - %(levelname)s - %(message)s')
-logging.basicConfig(filename='text.log',datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO,
+logging.basicConfig(filename='norms.log',datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s')
 
 class DummyFile(object):
@@ -34,6 +33,7 @@ class DummyFile(object):
 
 @contextlib.contextmanager
 def nostdout():
+    """Makes print output temporary so status can be continously updated without bloat."""
     save_stdout = sys.stdout
     sys.stdout = DummyFile(save_stdout)
     yield
@@ -81,7 +81,7 @@ def get_text(id_):
         logging.warning(f'Failed to use textract in {id_}, attempting OCR')
         return get_text_ocr(id_=id_)
     else:
-        logging.info(f'text extracted from PDF for {id_}')
+        logging.info(f'text extracted from PDF for {id_} with textract')
     return decode_text(text)
 
 def get_text_ocr(id_):
@@ -105,7 +105,7 @@ def get_text_ocr(id_):
         page = str(pytesseract.image_to_string(page, lang='spa'))
         text.append(page)
     text = ' '.join(str(text_) for text_ in text)
-    logging.info(f'text extracted with OCR for {id_}')
+    logging.info(f'text extracted from PDF for {id_} with OCR')
     return remove_singles(conv_chars(text))
 
 def update_text():
@@ -114,7 +114,7 @@ def update_text():
     It iterates through them, saving a copy of pdf from url to local memory before extrating
     text and saving it to the corresponding text field in collection. Only one copy at a time in memory.
     If PDF consists of a scanned document, optical character recognition if performed.
-    Updates and errors are logged.
+    Updates and errors are logged. Status is reported through nested progress bars.
     """
     nr_wo_text = db.norms.count_documents({'url':{'$exists':True}, 'text':{'$exists':False}})
     print(f'{nr_wo_text} URLs without text found.')
@@ -131,14 +131,15 @@ def update_text():
             pbar.set_description('Downloading PDF from URL')
             try:
                 get_pdf(doc['url'])
-            except PdfError:
+            except PdfError as error:
+                logging.error(f'Failed to get PDF {_id}: {error}')
                 continue
 
             pbar.set_description('Extracting text from PDF')
             text = get_text(_id)
 
             pbar.set_description('Upserting text to database')
-            db.norms.update_one({'_id':doc['_id']}, {'$set': {'text':text}})
+            db.norms.update_one({'_id':_id}, {'$set': {'text':text}})
             
             logging.info(f'{_id} has updated text')
             pbar.update(n=1)

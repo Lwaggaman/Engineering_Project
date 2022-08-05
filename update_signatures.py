@@ -2,14 +2,9 @@ import pandas as pd
 from text_funcs import clean_id
 from pymongo import MongoClient, UpdateOne
 from pprint import pprint
+from db_connection import setup_client
 
-config = {
-  'host': '54.241.98.140:27017',
-  'username': 'app_user',
-  'password': 'rechazo',
-  'authSource': 'cc_db'
-}
-client = MongoClient(**config)
+client = setup_client()
 db = client.cc_db
 
 def update_signatures():

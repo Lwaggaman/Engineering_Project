@@ -18,6 +18,9 @@ import contextlib
 import sys
 from tqdm import tqdm
 
+logging.basicConfig(filename='docs.log',datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s')
+
 #DummyFile is a slight modification from code by Perceval W
 #https://stackoverflow.com/questions/36986929/redirect-print-command-in-python-script-through-tqdm-write
 class DummyFile(object):
@@ -61,11 +64,9 @@ def scrape_page():
     
     # Separate elements into docs
     page_docs = []
-    with nostdout():
-        for i in tqdm(range(5), leave=False, desc=f'Scraping PAGE {page_nr}'):
-            page_docs.append(table_even[i].find_all('td'))
-            page_docs.append(table_even[i].find_all('td'))
-            sleep(.3)
+    for i in range(5):
+        page_docs.append(table_even[i].find_all('td'))
+        page_docs.append(table_even[i].find_all('td'))
     
     # Format for db
     page_dicts = []
@@ -74,19 +75,24 @@ def scrape_page():
         doc_dict['name'] = doc[1].text
         doc_dict['topic'] =  doc[3].text
         doc_dict['commision'] = doc[4].text
-        doc_dict['url'] = doc[5].find('a')['href']
+        try:
+            doc_dict['url'] = doc[5].find('a')['href']
+        except TypeError:
+            logging.info(f"Doc {doc_dict['_id']} contains no URL")
         page_dicts.append(doc_dict)
-    page_nr += 1
+    logging.info(f'{len(page_dicts)} url in page {page_nr}')
     return page_dicts
 
 def next_page():
-    global driver #Check if redundant
+    global driver, page_nr
     next_button = driver.find_element(by='id', value='tableIniciativas_next')
     try:
         next_button.click()
     except ElementClickInterceptedException as e:
-        #ADD LOG
         driver.execute_script("arguments[0].click();", next_button)
+        logging.info(f'Element not clickable in page {page_nr}: "Next" button alternate location found')
+    sleep(1.2)
+    page_nr += 1
 
 def update_db_docs():
     #geckodriver_autoinstaller.install()
@@ -102,28 +108,36 @@ def update_db_docs():
     #Loop crawls through pages until it reaches one where all the data is already in the db.
     nr_res = defaultdict(int) #Tracks all bulk api results (done sequentially to avoid bloating memory)
     while update_docs == True:
-        for doc in new_docs:
+        for doc in new_docs: 
             if db.norms.find_one({'_id':doc['_id']}):
                 new_docs.remove(doc)
-        print(f'Found {len(new_docs)} new documents in page {page_nr - 1}')
+        print(f'{len(new_docs)} new proposals found in page {page_nr}')
+        logging.info(f'{len(new_docs)} new urls in page {page_nr}')
         
         if len(new_docs)==0: #No new documents, loop stops
+            logging.info(f'No new docs in page {page_nr}: Scraping will stop')
             update_docs = False 
 
-        else:
-            next_page()
-            #Upsert documents
-            res = db.norms.bulk_write(
-                [UpdateOne({'_id':doc['_id']}, {'$set': doc}, upsert=True) for doc in new_docs]
-            )
-            for key, value in res.bulk_api_result.items():
-                if type(value) == int:
-                    nr_res[key] += value
+        else: #upsert docs found, scrape next page
+            try: 
+                res = db.norms.bulk_write(
+                    [UpdateOne({'_id':doc['_id']}, {'$set': doc}, upsert=True) for doc in new_docs]
+                    )
+                [logging.info(f'Upserted URL of document {ups["_id"]}') for ups in res.bulk_api_result["upserted"]]            
+            
+            except BulkWriteError as bwe:
+                [logging.info(f"{ups['_id']} has updated text") for ups in bwe.details['upserted']]
+                [logging.error(f"failed to insert {error['op']['_id']} : {error['errmsg']}") for error in bwe.details['writeErrors']]
+                #print(f"Updated:{bwe.details['nUpserted']} new documents with text")
 
-        #if page_nr == 3:
-        #    update_docs = False
+            next_page()
+            new_docs = scrape_page()
+            #for key, value in res.bulk_api_result.items():
+            #    if type(value) == int:
+            #        nr_res[key] += value
+
     print(f'Scraped {page_nr - 1} pages')
-    pprint(nr_res)
+    #pprint(nr_res)
     #print(f'Matched: {nr_res['nMatched']}, Inserted: {nr_res['nInserted']}, Modified: {nr_res['nModified']}')
 
 

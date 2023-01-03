@@ -1,6 +1,6 @@
 ## Access Guide
 
-To access the data gathered by this project you may use "db_connection_user.py" to access the MongoDB database.
+To access the data gathered by this project you may use "db_connection_read.py" to access the MongoDB database.
 
 #### Requirements
 You will need pymongo, which can be installed with conda.

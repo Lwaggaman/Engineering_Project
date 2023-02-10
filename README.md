@@ -40,4 +40,4 @@ Instructions on how to connect to the database and access the data gathered by t
 - **There is never more than one PDF and/or its extracted text in local memory at a time**: We iterate through the MongoDB cursor (generator) and process each URL:
 1. Request and save its PDF file to memory.
 2. Extract and upsert the file’s text to db in the cloud.
-3. Repeat for the next URL, overwriting the PDF in memory with the new one we request.
+3. Repeat for the next URL, overwriting the PDF file in memory with the new one we request.

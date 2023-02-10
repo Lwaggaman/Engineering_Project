@@ -23,3 +23,12 @@ Instructions on how to connect to the database and access the data gathered by t
 **Robustness**
 - logging to track progress and errors.
 - tqdm and contextlib for progress reports while scripts are running.
+
+### Phase I
+
+[](https://i.imgur.com/mzIuFwn.png)
+
+
+### Phase II
+
+[](https://i.imgur.com/SAtGznf.png)

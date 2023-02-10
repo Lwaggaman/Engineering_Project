@@ -4,7 +4,7 @@ This project aims to compile some of the Chilean Constititional Assembly's more 
 
 Instructions on how to connect to the database and access the data gathered by this project can be found [here](https://github.com/Lwaggaman/OCR_Pipeline/blob/main/access_data.md)
 
-#### Tools
+### Tools
 **Data Ingestion**:
 - Selenium, beautifulsoup, time, random, and fake-useragent for scraping and parsing data.
 - requests to get PDFs.
@@ -26,9 +26,9 @@ Instructions on how to connect to the database and access the data gathered by t
 
 ### Phase I
 
-[](https://i.imgur.com/mzIuFwn.png)
+![](https://i.imgur.com/mzIuFwn.png)
 
 
 ### Phase II
 
-[](https://i.imgur.com/SAtGznf.png)
+![](https://i.imgur.com/SAtGznf.png)

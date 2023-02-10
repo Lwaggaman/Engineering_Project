@@ -32,3 +32,12 @@ Instructions on how to connect to the database and access the data gathered by t
 ### Phase II
 
 ![](https://i.imgur.com/SAtGznf.png)
+
+### Complexity Considerations:
+
+- **Fast db queries**: Since some are bloated by images and can be larger, the PDFs are not stored in the db, only the URL to retrieve them from the govt server, and — once extracted — its text as a string. We improve performance by avoiding larger documents.
+- **Only extract text from new URLs**: We only project the URLs of PDF files that haven’t had their text extracted and upserted to db, as a generator.
+- **There is never more than one PDF and/or its extracted text in local memory at a time**: We iterate through the MongoDB cursor (generator) and process each URL:
+1. Request and save its PDF file to memory.
+2. Extract and upsert the file’s text to db in the cloud.
+3. Repeat for the next URL, overwriting the PDF in memory with the new one we request.

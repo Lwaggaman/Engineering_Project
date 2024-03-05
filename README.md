@@ -31,7 +31,7 @@ Instructions on how to connect to the database and access the data gathered by t
 
 ### Phase II
 
-![](https://i.imgur.com/SAtGznf.pngg)
+![](https://i.imgur.com/SAtGznfg.pngg)
 
 ### Complexity Considerations:
 
